@@ -34,5 +34,14 @@ bool OLC6502::ConnectBus(Bus* bus){
 	return true;
 }
 
+uint8_t OLC6502::GetFlag(FLAGS6502 flag){
+	return _regs.status & flag;
+	}
+
+void  OLC6502:: SetFlag(FLAGS6502 flag, bool v){
+	_regs.status |= flag;
+}
+
+
 
 	
