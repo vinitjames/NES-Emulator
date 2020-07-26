@@ -39,7 +39,39 @@ uint8_t OLC6502::GetFlag(FLAGS6502 flag){
 	}
 
 void  OLC6502:: SetFlag(FLAGS6502 flag, bool v){
-	_regs.status |= flag;
+	if(v)
+		_regs.status |= flag;
+	else
+		_regs.status &= ~flag;
+		
+}
+
+uint8_t OLC6502::IMP() {
+	_fetchedData = _regs.accum;
+	return 0;
+}
+
+uint8_t OLC6502::IMM() {
+	_addrAbs = _regs.pc++;
+	return 0;
+}
+
+uint8_t OLC6502::ZP0() {
+	_addrAbs = ReadFromBus(_regs.pc++);
+	_addrAbs &= 0x00FF;
+	return 0;
+}
+
+uint8_t OLC6502::ZPX() {
+	_addrAbs = ReadFromBus(_regs.pc++) + _regs.x;
+	_addrAbs &= 0x00FF;
+	return 0;
+}
+
+uint8_t OLC6502::ZPY() {
+	_addrAbs = ReadFromBus(_regs.pc++) + _regs.y;
+	_addrAbs &= 0x00FF;
+	return 0;
 }
 
 

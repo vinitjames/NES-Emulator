@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
+#include <functional>
 
 class Bus;
 
@@ -36,17 +38,13 @@ private:
 		uint16_t pc    = 0x0000; 
 		uint8_t status = 0x00;
 	};
-	
-	Registers _regs;
-	Bus* _bus = nullptr;
-	
-	//helper variables for the internal functionality of the CPU 
-	uint8_t _fetchedData = 0x00;  
-	uint16_t _addrAbs = 0x0000;
-	uint8_t _addRel = 0x00;
-	uint8_t _currOPcode = 0x00;
-	uint8_t _cyclesLeft = 0;
 
+	
+	Registers _regs; //internal registers of the CPU
+	Bus* _bus = nullptr; //Handle to the connected bus
+	
+	
+	//helper functions for setting and getting flags
 	uint8_t GetFlag(FLAGS6502 flag);
 	void    SetFlag(FLAGS6502 flag, bool v);
 
@@ -74,15 +72,30 @@ private:
 	uint8_t SEC();    uint8_t SED();  uint8_t SEI();  uint8_t STA();
 	uint8_t STX();    uint8_t STY();  uint8_t TAX();  uint8_t TAY();
 	uint8_t TSX();    uint8_t TXA();  uint8_t TXS();  uint8_t TYA();
+	uint8_t XXX();
+
+	struct Instruction{
+		std::string name;
+		std::function<uint8_t(void)> addrmode;
+		std::function<uint8_t(void)> operate;
+		uint8_t cycles = 0;
+	};
+	
+	std::vector<Instruction> _instructTable;
 
 	// functions for internal cpu functionalities
-	void Clock();
+	void ExecuteClockCycle();
 	void Reset();
-	void IRQ();
+	void IntReq();
 	void NMI();
-
 	uint8_t FetchData();
-	
+
+	//helper variables for the internal functionality of the CPU 
+	uint8_t _fetchedData = 0x00;  
+	uint16_t _addrAbs = 0x0000;
+	uint8_t _addRel = 0x00;
+	uint8_t _currOPcode = 0x00;
+	uint8_t _cyclesLeft = 0;
 	
 };
 
