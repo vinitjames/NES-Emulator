@@ -75,27 +75,27 @@ uint8_t OLC6502::ZPY() {
 }
 
 uint8_t OLC6502::ABS() {
-	uint8_t loBits = ReadFromBus(_regs.pc++);
-	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	uint8_t lsb = ReadFromBus(_regs.pc++);
+	uint8_t msb = ReadFromBus(_regs.pc++);
 	
-	_addrAbs = (hiBits << 8)|loBits;
+	_addrAbs = (msb << 8) | lsb;
 	return 0;
 }
 
 uint8_t OLC6502::ABX() {
-	uint8_t loBits = ReadFromBus(_regs.pc++);
-	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	uint8_t lsb = ReadFromBus(_regs.pc++);
+	uint8_t msb = ReadFromBus(_regs.pc++);
 	
-	_addrAbs = ((hiBits << 8)|loBits) + _regs.x;
-	return ((_addrAbs & 0xFF00) != (hiBits<<8)) ? 1 : 0;
+	_addrAbs = ((msb << 8) | lsb) + _regs.x;
+	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
 uint8_t OLC6502::ABY() {
-	uint8_t loBits = ReadFromBus(_regs.pc++);
-	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	uint8_t lsb = ReadFromBus(_regs.pc++);
+	uint8_t msb = ReadFromBus(_regs.pc++);
 	
-	_addrAbs = ((hiBits << 8)|loBits) + _regs.y;
-	return ((_addrAbs & 0xFF00) != (hiBits<<8)) ? 1 : 0;
+	_addrAbs = ((msb << 8) | lsb) + _regs.y;
+	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
 uint8_t OLC6502::IND() {
@@ -112,34 +112,33 @@ uint8_t OLC6502::IND() {
 	return 0;
 }
 
+
 uint8_t OLC6502::IZX() {
-	uint8_t ptrLo = ReadFromBus(_regs.pc++);
-	uint8_t ptrHi = ReadFromBus(_regs.pc++);
+	uint8_t  addr = ReadFromBus(_regs.pc++);
+ 
+	uint8_t lsb = ReadFromBus((uint16_t)(addr +_regs.x) & 0x00FF);
+	uint8_t msb = ReadFromBus((uint16_t)(addr +_regs.x + 1) & 0x00FF);
 	
-	uint8_t ptr = (ptrHi << 8) | ptrLo;
-	//Simulating Hardware bug in 6502
-	if(ptrLo == 0xFF)
-		_addrAbs = (ReadFromBus(ptr & 0xFF00) << 8) | ReadFromBus(ptr);
-	
-	else
-		_addrAbs = (ReadFromBus(ptr + 1) << 8) | ReadFromBus(ptr);
+	_addrAbs = (msb << 8) | lsb;
 	return 0;
 }
 
 uint8_t OLC6502::IZY() {
-	uint8_t ptrLo = ReadFromBus(_regs.pc++);
-	uint8_t ptrHi = ReadFromBus(_regs.pc++);
+	uint8_t  addr = ReadFromBus(_regs.pc++);
+ 
+	uint8_t lsb = ReadFromBus((uint16_t)(addr) & 0x00FF);
+	uint8_t msb = ReadFromBus((uint16_t)(addr + 1) & 0x00FF);
 	
-	uint8_t ptr = (ptrHi << 8) | ptrLo;
-	//Simulating Hardware bug in 6502
-	if(ptrLo == 0xFF)
-		_addrAbs = (ReadFromBus(ptr & 0xFF00) << 8) | ReadFromBus(ptr);
-	
-	else
-		_addrAbs = (ReadFromBus(ptr + 1) << 8) | ReadFromBus(ptr);
-	return 0;
+	_addrAbs = ((msb << 8) | lsb) + _regs.y;
+
+  	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
+uint8_t OLC6502::REL() {
+	_addrRel = ReadFromBus(_regs.pc++);
 
+	if(_addrRel & 0x80)
+		_addrRel |= 0xFF00;
+  	return 0;
+}
 
-	
