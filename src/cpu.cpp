@@ -74,6 +74,72 @@ uint8_t OLC6502::ZPY() {
 	return 0;
 }
 
+uint8_t OLC6502::ABS() {
+	uint8_t loBits = ReadFromBus(_regs.pc++);
+	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	
+	_addrAbs = (hiBits << 8)|loBits;
+	return 0;
+}
+
+uint8_t OLC6502::ABX() {
+	uint8_t loBits = ReadFromBus(_regs.pc++);
+	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	
+	_addrAbs = ((hiBits << 8)|loBits) + _regs.x;
+	return ((_addrAbs & 0xFF00) != (hiBits<<8)) ? 1 : 0;
+}
+
+uint8_t OLC6502::ABY() {
+	uint8_t loBits = ReadFromBus(_regs.pc++);
+	uint8_t hiBits = ReadFromBus(_regs.pc++);
+	
+	_addrAbs = ((hiBits << 8)|loBits) + _regs.y;
+	return ((_addrAbs & 0xFF00) != (hiBits<<8)) ? 1 : 0;
+}
+
+uint8_t OLC6502::IND() {
+	uint8_t ptrLo = ReadFromBus(_regs.pc++);
+	uint8_t ptrHi = ReadFromBus(_regs.pc++);
+	
+	uint8_t ptr = (ptrHi << 8) | ptrLo;
+	//Simulating Hardware bug in 6502
+	if(ptrLo == 0xFF)
+		_addrAbs = (ReadFromBus(ptr & 0xFF00) << 8) | ReadFromBus(ptr);
+	
+	else
+		_addrAbs = (ReadFromBus(ptr + 1) << 8) | ReadFromBus(ptr);
+	return 0;
+}
+
+uint8_t OLC6502::IZX() {
+	uint8_t ptrLo = ReadFromBus(_regs.pc++);
+	uint8_t ptrHi = ReadFromBus(_regs.pc++);
+	
+	uint8_t ptr = (ptrHi << 8) | ptrLo;
+	//Simulating Hardware bug in 6502
+	if(ptrLo == 0xFF)
+		_addrAbs = (ReadFromBus(ptr & 0xFF00) << 8) | ReadFromBus(ptr);
+	
+	else
+		_addrAbs = (ReadFromBus(ptr + 1) << 8) | ReadFromBus(ptr);
+	return 0;
+}
+
+uint8_t OLC6502::IZY() {
+	uint8_t ptrLo = ReadFromBus(_regs.pc++);
+	uint8_t ptrHi = ReadFromBus(_regs.pc++);
+	
+	uint8_t ptr = (ptrHi << 8) | ptrLo;
+	//Simulating Hardware bug in 6502
+	if(ptrLo == 0xFF)
+		_addrAbs = (ReadFromBus(ptr & 0xFF00) << 8) | ReadFromBus(ptr);
+	
+	else
+		_addrAbs = (ReadFromBus(ptr + 1) << 8) | ReadFromBus(ptr);
+	return 0;
+}
+
 
 
 	
