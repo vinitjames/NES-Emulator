@@ -142,3 +142,135 @@ uint8_t OLC6502::REL() {
   	return 0;
 }
 
+//fetch data using address mode
+uint8_t OLC6502::FetchData(){
+	if(_instructTable[_currOPcode].Addrmode != &OLC6502::IMP)
+		_fetchedData = ReadFromBus(_addrAbs);
+	return _fetchedData;
+}
+
+//Instructions
+
+uint8_t OLC6502::AND(){
+	FetchData();
+	_regs.accum &= _fetchedData;
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 1;
+}
+
+uint8_t OLC6502::BCC(){
+	if(GetFlag(C) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BCS(){
+	if(GetFlag(C) == 1){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BEQ(){
+	if(GetFlag(Z) == 1){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BNE(){
+	if(GetFlag(Z) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BMI(){
+	if(GetFlag(N) == 1){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BPL(){
+	if(GetFlag(N) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BVS(){
+	if(GetFlag(V) == 1){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::BVC(){
+	if(GetFlag(V) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t OLC6502::CLC(){
+	SetFlag(C, false);
+	return 0;
+}
+
+uint8_t OLC6502::CLD(){
+	SetFlag(D, false);
+	return 0;
+}
+
+uint8_t OLC6502::CLI(){
+	SetFlag(I, false);
+	return 0;
+}
+
+uint8_t OLC6502::CLV(){
+	SetFlag(V, false);
+	return 0;
+}
