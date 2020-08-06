@@ -151,6 +151,17 @@ uint8_t OLC6502::FetchData(){
 
 //Instructions
 
+uint8_t OLC6502::ADC(){
+	FetchData();
+	uint16_t temp = (uint16_t)_fetchedData + (uint16_t)_regs.accum + (uint16_t)GetFlag(C);
+	SetFlag(C, temp > 255);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	SetFlag(V, ((uint16_t)_regs.accum ^ temp) & (~((uint16_t)_regs.accum ^ (uint16_t)_fetchedData)));
+	_regs.accum = temp & 0x00FF;
+	return 1;
+}
+
 uint8_t OLC6502::AND(){
 	FetchData();
 	_regs.accum &= _fetchedData;
@@ -274,3 +285,14 @@ uint8_t OLC6502::CLV(){
 	SetFlag(V, false);
 	return 0;
 }
+
+
+uint8_t OLC6502::ORA(){
+	FetchData();
+	_regs.accum |= _fetchedData;
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+
