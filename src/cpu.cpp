@@ -295,4 +295,60 @@ uint8_t OLC6502::ORA(){
 	return 0;
 }
 
+uint8_t OLC6502::SBC(){
+	FetchData();
+	uint16_t value = (uint16_t)_fetchedData ^ 0x00FF;
+	uint16_t temp =  (uint16_t)_regs.accum + value + (uint16_t)GetFlag(C);
+	SetFlag(C, temp > 255);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	SetFlag(V, ((uint16_t)_regs.accum ^ temp) & (~((uint16_t)_regs.accum ^ (uint16_t)_fetchedData)));
+	_regs.accum = temp & 0x00FF;
+	return 1;
+}
+
+uint8_t OLC6502::PHA(){
+	WriteToBus(0x0100 + _regs.stkp, _regs.accum);
+	_regs.stkp--;
+	return 0;
+}
+
+uint8_t OLC6502::PHP(){
+	WriteToBus(0x0100 + _regs.status, _regs.accum);
+	_regs.stkp--;
+	return 0;
+}
+
+uint8_t OLC6502::PLA(){
+	_regs.stkp++;
+	_regs.accum = ReadFromBus(0x0100 + _regs.stkp);
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+
+void OLC6502::Reset(){
+	_regs.accum  = 0x00;  
+  	_regs.x      = 0x00;  
+	_regs.y      = 0x00;
+	_regs.stkp   = 0xFD;
+	_regs.status = 0x00 | U;
+
+	//reading program counter from hardcoded address 0xFFFC on Reset
+	_addrAbs = 0xFFFC;
+	uint8_t lsb = ReadFromBus(_addrAbs);
+	uint8_t msb = ReadFromBus(_addrAbs + 1);
+	_regs.pc = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+	//resetting internal variables
+	_fetchedData = 0x00;  
+	_addrAbs = 0x0000;
+	_addrRel = 0x0000;
+	_currOPcode = 0x00;
+
+	_cyclesLeft = 8;
+	
+}
+
 

@@ -76,8 +76,8 @@ private:
 
 	struct Instruction{
 		std::string name;
-		std::function<uint8_t(void)> addrmode;
-		std::function<uint8_t(void)> operate;
+		uint8_t (OLC6502::*Addrmode)();
+		uint8_t (OLC6502::*Oper)();;
 		uint8_t cycles = 0;
 	};
 	
@@ -93,7 +93,7 @@ private:
 	//helper variables for the internal functionality of the CPU 
 	uint8_t _fetchedData = 0x00;  
 	uint16_t _addrAbs = 0x0000;
-	uint8_t _addRel = 0x00;
+	uint16_t _addrRel = 0x0000;
 	uint8_t _currOPcode = 0x00;
 	uint8_t _cyclesLeft = 0;
 	
