@@ -351,4 +351,60 @@ void OLC6502::Reset(){
 	
 }
 
+void OLC6502::IntReq(){
+	if(GetFlag(I) != 0)
+		return;
+	
+	WriteToBus(0x0100 + _regs.stkp, (_regs.pc >> 8) & 0x00FF);
+	_regs.stkp--;
+	WriteToBus(0x0100 + _regs.stkp, _regs.pc & 0x00FF);
+	_regs.stkp--;
 
+	SetFlag(B, 0);
+	SetFlag(I, 1);
+	SetFlag(U, 1);
+	WriteToBus(0x0100 + _regs.stkp, _regs.status);
+	_regs.stkp--;
+
+	_addrAbs = 0xFFFE;
+	uint8_t lsb = ReadFromBus(_addrAbs);
+	uint8_t msb = ReadFromBus(_addrAbs + 1);
+	_regs.pc = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+	_cyclesLeft = 7;
+}
+
+void OLC6502::NonMaskInt(){
+	
+	WriteToBus(0x0100 + _regs.stkp, (_regs.pc >> 8) & 0x00FF);
+	_regs.stkp--;
+	WriteToBus(0x0100 + _regs.stkp, _regs.pc & 0x00FF);
+	_regs.stkp--;
+
+	SetFlag(B, 0);
+	SetFlag(I, 1);
+	SetFlag(U, 1);
+	WriteToBus(0x0100 + _regs.stkp, _regs.status);
+	_regs.stkp--;
+
+	_addrAbs = 0xFFFA;
+	uint8_t lsb = ReadFromBus(_addrAbs);
+	uint8_t msb = ReadFromBus(_addrAbs + 1);
+	_regs.pc = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+	_cyclesLeft = 7;
+}
+
+uint8_t OLC6502::RTI(){
+	_regs.stkp++;
+	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
+	_regs.status &= ~B;
+	_regs.status &= ~U;
+
+	_regs.stkp++;
+	_regs.pc = (uint16_t)ReadFromBus(0x0100 + _regs.stkp);
+   _regs.stkp++;
+   _regs.pc |= (uint16_t)ReadFromBus(0x0100 + _regs.stkp) << 8;
+   return 0;
+	
+}

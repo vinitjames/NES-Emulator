@@ -87,7 +87,7 @@ private:
 	void ExecuteClockCycle();
 	void Reset();
 	void IntReq();
-	void NMI();
+	void NonMaskInt();
 	uint8_t FetchData();
 
 	//helper variables for the internal functionality of the CPU 
