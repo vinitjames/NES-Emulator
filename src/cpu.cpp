@@ -4,41 +4,41 @@
 #include "cpu.h"
 #include "log.h"
 
-void OLC6502::WriteToBus(uint16_t addr, uint8_t data){
+void CPU6502::WriteToBus(uint16_t addr, uint8_t data){
 	if(_bus == nullptr){
-		LOG_ERROR("OLC6502 Error: Cpu cannot write, not connected to bus ");
+		LOG_ERROR("CPU6502 Error: Cpu cannot write, not connected to bus ");
 		return;
 	}
 	return _bus->Write(addr, data);
 }
 
-uint8_t  OLC6502::ReadFromBus(uint16_t addr) const{
+uint8_t  CPU6502::ReadFromBus(uint16_t addr) const{
 	if(_bus == nullptr){
-		LOG_ERROR("OLC6502 Error: Cpu cannot read, not connected to bus ");
+		LOG_ERROR("CPU6502 Error: Cpu cannot read, not connected to bus ");
 		return 0;
 	}
 	return _bus->Read(addr, false);
 }
 
-bool OLC6502::ConnectBus(Bus* bus){
+bool CPU6502::ConnectBus(Bus* bus){
 
 	if(_bus != nullptr){
-		LOG_ERROR("OLC6502 Error: Cpu already connected to another Bus disconnect before connecting again");
+		LOG_ERROR("CPU6502 Error: Cpu already connected to another Bus disconnect before connecting again");
 		return false;
 	}
 	if(bus==nullptr){
-		LOG_ERROR("OLC6502 Error: Null Bus passed to connect bus function");
+		LOG_ERROR("CPU6502 Error: Null Bus passed to connect bus function");
 		return false;
 	}
 	_bus = bus;
 	return true;
 }
 
-uint8_t OLC6502::GetFlag(FLAGS6502 flag){
+uint8_t CPU6502::GetFlag(FLAGS6502 flag){
 	return _regs.status & flag;
 	}
 
-void  OLC6502:: SetFlag(FLAGS6502 flag, bool v){
+void  CPU6502:: SetFlag(FLAGS6502 flag, bool v){
 	if(v)
 		_regs.status |= flag;
 	else
@@ -46,35 +46,35 @@ void  OLC6502:: SetFlag(FLAGS6502 flag, bool v){
 		
 }
 
-uint8_t OLC6502::IMP() {
+uint8_t CPU6502::IMP() {
 	_fetchedData = _regs.accum;
 	return 0;
 }
 
-uint8_t OLC6502::IMM() {
+uint8_t CPU6502::IMM() {
 	_addrAbs = _regs.pc++;
 	return 0;
 }
 
-uint8_t OLC6502::ZP0() {
+uint8_t CPU6502::ZP0() {
 	_addrAbs = ReadFromBus(_regs.pc++);
 	_addrAbs &= 0x00FF;
 	return 0;
 }
 
-uint8_t OLC6502::ZPX() {
+uint8_t CPU6502::ZPX() {
 	_addrAbs = ReadFromBus(_regs.pc++) + _regs.x;
 	_addrAbs &= 0x00FF;
 	return 0;
 }
 
-uint8_t OLC6502::ZPY() {
+uint8_t CPU6502::ZPY() {
 	_addrAbs = ReadFromBus(_regs.pc++) + _regs.y;
 	_addrAbs &= 0x00FF;
 	return 0;
 }
 
-uint8_t OLC6502::ABS() {
+uint8_t CPU6502::ABS() {
 	uint8_t lsb = ReadFromBus(_regs.pc++);
 	uint8_t msb = ReadFromBus(_regs.pc++);
 	
@@ -82,7 +82,7 @@ uint8_t OLC6502::ABS() {
 	return 0;
 }
 
-uint8_t OLC6502::ABX() {
+uint8_t CPU6502::ABX() {
 	uint8_t lsb = ReadFromBus(_regs.pc++);
 	uint8_t msb = ReadFromBus(_regs.pc++);
 	
@@ -90,7 +90,7 @@ uint8_t OLC6502::ABX() {
 	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
-uint8_t OLC6502::ABY() {
+uint8_t CPU6502::ABY() {
 	uint8_t lsb = ReadFromBus(_regs.pc++);
 	uint8_t msb = ReadFromBus(_regs.pc++);
 	
@@ -98,7 +98,7 @@ uint8_t OLC6502::ABY() {
 	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
-uint8_t OLC6502::IND() {
+uint8_t CPU6502::IND() {
 	uint8_t ptrLo = ReadFromBus(_regs.pc++);
 	uint8_t ptrHi = ReadFromBus(_regs.pc++);
 	
@@ -113,7 +113,7 @@ uint8_t OLC6502::IND() {
 }
 
 
-uint8_t OLC6502::IZX() {
+uint8_t CPU6502::IZX() {
 	uint8_t  addr = ReadFromBus(_regs.pc++);
  
 	uint8_t lsb = ReadFromBus((uint16_t)(addr +_regs.x) & 0x00FF);
@@ -123,7 +123,7 @@ uint8_t OLC6502::IZX() {
 	return 0;
 }
 
-uint8_t OLC6502::IZY() {
+uint8_t CPU6502::IZY() {
 	uint8_t  addr = ReadFromBus(_regs.pc++);
  
 	uint8_t lsb = ReadFromBus((uint16_t)(addr) & 0x00FF);
@@ -134,7 +134,7 @@ uint8_t OLC6502::IZY() {
   	return ((_addrAbs & 0xFF00) != (msb << 8)) ? 1 : 0;
 }
 
-uint8_t OLC6502::REL() {
+uint8_t CPU6502::REL() {
 	_addrRel = ReadFromBus(_regs.pc++);
 
 	if(_addrRel & 0x80)
@@ -143,15 +143,15 @@ uint8_t OLC6502::REL() {
 }
 
 //fetch data using address mode
-uint8_t OLC6502::FetchData(){
-	if(_instructTable[_currOPcode].Addrmode != &OLC6502::IMP)
+uint8_t CPU6502::FetchData(){
+	if(_instructTable[_currOPcode].Addrmode != &CPU6502::IMP)
 		_fetchedData = ReadFromBus(_addrAbs);
 	return _fetchedData;
 }
 
 //Instructions
 
-uint8_t OLC6502::ADC(){
+uint8_t CPU6502::ADC(){
 	FetchData();
 	uint16_t temp = (uint16_t)_fetchedData + (uint16_t)_regs.accum + (uint16_t)GetFlag(C);
 	SetFlag(C, temp > 255);
@@ -162,7 +162,7 @@ uint8_t OLC6502::ADC(){
 	return 1;
 }
 
-uint8_t OLC6502::AND(){
+uint8_t CPU6502::AND(){
 	FetchData();
 	_regs.accum &= _fetchedData;
 	SetFlag(Z, _regs.accum == 0x00);
@@ -170,7 +170,7 @@ uint8_t OLC6502::AND(){
 	return 1;
 }
 
-uint8_t OLC6502::BCC(){
+uint8_t CPU6502::BCC(){
 	if(GetFlag(C) == 0){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -182,7 +182,7 @@ uint8_t OLC6502::BCC(){
 	return 0;
 }
 
-uint8_t OLC6502::BCS(){
+uint8_t CPU6502::BCS(){
 	if(GetFlag(C) == 1){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -194,7 +194,7 @@ uint8_t OLC6502::BCS(){
 	return 0;
 }
 
-uint8_t OLC6502::BEQ(){
+uint8_t CPU6502::BEQ(){
 	if(GetFlag(Z) == 1){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -206,7 +206,7 @@ uint8_t OLC6502::BEQ(){
 	return 0;
 }
 
-uint8_t OLC6502::BNE(){
+uint8_t CPU6502::BNE(){
 	if(GetFlag(Z) == 0){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -218,7 +218,7 @@ uint8_t OLC6502::BNE(){
 	return 0;
 }
 
-uint8_t OLC6502::BMI(){
+uint8_t CPU6502::BMI(){
 	if(GetFlag(N) == 1){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -230,7 +230,7 @@ uint8_t OLC6502::BMI(){
 	return 0;
 }
 
-uint8_t OLC6502::BPL(){
+uint8_t CPU6502::BPL(){
 	if(GetFlag(N) == 0){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -242,7 +242,7 @@ uint8_t OLC6502::BPL(){
 	return 0;
 }
 
-uint8_t OLC6502::BVS(){
+uint8_t CPU6502::BVS(){
 	if(GetFlag(V) == 1){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -254,7 +254,7 @@ uint8_t OLC6502::BVS(){
 	return 0;
 }
 
-uint8_t OLC6502::BVC(){
+uint8_t CPU6502::BVC(){
 	if(GetFlag(V) == 0){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
@@ -266,28 +266,28 @@ uint8_t OLC6502::BVC(){
 	return 0;
 }
 
-uint8_t OLC6502::CLC(){
+uint8_t CPU6502::CLC(){
 	SetFlag(C, false);
 	return 0;
 }
 
-uint8_t OLC6502::CLD(){
+uint8_t CPU6502::CLD(){
 	SetFlag(D, false);
 	return 0;
 }
 
-uint8_t OLC6502::CLI(){
+uint8_t CPU6502::CLI(){
 	SetFlag(I, false);
 	return 0;
 }
 
-uint8_t OLC6502::CLV(){
+uint8_t CPU6502::CLV(){
 	SetFlag(V, false);
 	return 0;
 }
 
 
-uint8_t OLC6502::ORA(){
+uint8_t CPU6502::ORA(){
 	FetchData();
 	_regs.accum |= _fetchedData;
 	SetFlag(Z, _regs.accum == 0x00);
@@ -295,7 +295,7 @@ uint8_t OLC6502::ORA(){
 	return 0;
 }
 
-uint8_t OLC6502::SBC(){
+uint8_t CPU6502::SBC(){
 	FetchData();
 	uint16_t value = (uint16_t)_fetchedData ^ 0x00FF;
 	uint16_t temp =  (uint16_t)_regs.accum + value + (uint16_t)GetFlag(C);
@@ -307,19 +307,19 @@ uint8_t OLC6502::SBC(){
 	return 1;
 }
 
-uint8_t OLC6502::PHA(){
+uint8_t CPU6502::PHA(){
 	WriteToBus(0x0100 + _regs.stkp, _regs.accum);
 	_regs.stkp--;
 	return 0;
 }
 
-uint8_t OLC6502::PHP(){
+uint8_t CPU6502::PHP(){
 	WriteToBus(0x0100 + _regs.status, _regs.accum);
 	_regs.stkp--;
 	return 0;
 }
 
-uint8_t OLC6502::PLA(){
+uint8_t CPU6502::PLA(){
 	_regs.stkp++;
 	_regs.accum = ReadFromBus(0x0100 + _regs.stkp);
 	SetFlag(Z, _regs.accum == 0x00);
@@ -328,7 +328,7 @@ uint8_t OLC6502::PLA(){
 }
 
 
-void OLC6502::Reset(){
+void CPU6502::Reset(){
 	_regs.accum  = 0x00;  
   	_regs.x      = 0x00;  
 	_regs.y      = 0x00;
@@ -351,7 +351,7 @@ void OLC6502::Reset(){
 	
 }
 
-void OLC6502::IntReq(){
+void CPU6502::IntReq(){
 	if(GetFlag(I) != 0)
 		return;
 	
@@ -374,7 +374,7 @@ void OLC6502::IntReq(){
 	_cyclesLeft = 7;
 }
 
-void OLC6502::NonMaskInt(){
+void CPU6502::NonMaskInt(){
 	
 	WriteToBus(0x0100 + _regs.stkp, (_regs.pc >> 8) & 0x00FF);
 	_regs.stkp--;
@@ -395,7 +395,7 @@ void OLC6502::NonMaskInt(){
 	_cyclesLeft = 7;
 }
 
-uint8_t OLC6502::RTI(){
+uint8_t CPU6502::RTI(){
 	_regs.stkp++;
 	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
 	_regs.status &= ~B;

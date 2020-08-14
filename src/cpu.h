@@ -8,11 +8,11 @@
 
 class Bus;
 
-class OLC6502 {
+class CPU6502 {
 
 public:
-	OLC6502() = default;
-	~OLC6502() = default;
+	CPU6502() = default;
+	~CPU6502() = default;
 	void WriteToBus(uint16_t addr, uint8_t data);
 	uint8_t  ReadFromBus(uint16_t addr) const;
 	bool ConnectBus(Bus* bus);
@@ -76,8 +76,8 @@ private:
 
 	struct Instruction{
 		std::string name;
-		uint8_t (OLC6502::*Addrmode)();
-		uint8_t (OLC6502::*Oper)();;
+		uint8_t (CPU6502::*Addrmode)();
+		uint8_t (CPU6502::*Oper)();;
 		uint8_t cycles = 0;
 	};
 	
