@@ -170,6 +170,19 @@ uint8_t CPU6502::AND(){
 	return 1;
 }
 
+uint8_t CPU6502::ASL(){
+	FetchData();
+	uint16_t temp = (uint16_t)_fetchedData << 1;
+	SetFlag(C, (temp & 0xFF00) > 0);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	if (_instructTable[_currOPcode].Addrmode == &CPU6502::IMP)
+		_regs.accum = temp & 0x00FF;
+	else
+		WriteToBus(_addrAbs, temp & 0x00FF);
+	return 0;
+}
+
 uint8_t CPU6502::BCC(){
 	if(GetFlag(C) == 0){
 		_cyclesLeft++;
@@ -206,15 +219,13 @@ uint8_t CPU6502::BEQ(){
 	return 0;
 }
 
-uint8_t CPU6502::BNE(){
-	if(GetFlag(Z) == 0){
-		_cyclesLeft++;
-		_addrAbs = _regs.pc + _addrRel;
-
-		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
-			_cyclesLeft++;
-		_regs.pc = _addrAbs;
-	}	
+uint8_t CPU6502::BIT(){
+	FetchData();
+	uint16_t temp = _regs.accum & _fetchedData;
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, _fetchedData & (1 << 7));
+	SetFlag(V, _fetchedData & (1 << 6));
+			
 	return 0;
 }
 
@@ -230,8 +241,58 @@ uint8_t CPU6502::BMI(){
 	return 0;
 }
 
+uint8_t CPU6502::BNE(){
+	if(GetFlag(Z) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+
+
 uint8_t CPU6502::BPL(){
 	if(GetFlag(N) == 0){
+		_cyclesLeft++;
+		_addrAbs = _regs.pc + _addrRel;
+
+		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
+			_cyclesLeft++;
+		_regs.pc = _addrAbs;
+	}	
+	return 0;
+}
+
+uint8_t CPU6502::BRK(){
+
+	_regs.pc++;
+	SetFlag(I, 1);
+	WriteToBus(0x0100 + _regs.stkp, (_regs.pc >> 8) & 0x00FF);
+	_regs.stkp--;
+	WriteToBus(0x0100 + _regs.stkp, _regs.pc & 0x00FF);
+	_regs.stkp--;
+
+	SetFlag(B, 1);
+	WriteToBus(0x0100 + _regs.stkp, _regs.status);
+	_regs.stkp--;
+	SetFlag(B, 0);
+	
+	_addrAbs = 0xFFFE;
+	uint8_t lsb = ReadFromBus(_addrAbs);
+	uint8_t msb = ReadFromBus(_addrAbs + 1);
+	_regs.pc = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+	return 0;
+	
+}
+
+
+uint8_t CPU6502::BVC(){
+	if(GetFlag(V) == 0){
 		_cyclesLeft++;
 		_addrAbs = _regs.pc + _addrRel;
 
@@ -254,17 +315,6 @@ uint8_t CPU6502::BVS(){
 	return 0;
 }
 
-uint8_t CPU6502::BVC(){
-	if(GetFlag(V) == 0){
-		_cyclesLeft++;
-		_addrAbs = _regs.pc + _addrRel;
-
-		if((_addrAbs & 0xFF00) != (_regs.pc & 0xFF00))
-			_cyclesLeft++;
-		_regs.pc = _addrAbs;
-	}	
-	return 0;
-}
 
 uint8_t CPU6502::CLC(){
 	SetFlag(C, false);
