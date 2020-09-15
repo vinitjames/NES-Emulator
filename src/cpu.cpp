@@ -290,7 +290,6 @@ uint8_t CPU6502::BRK(){
 	
 }
 
-
 uint8_t CPU6502::BVC(){
 	if(GetFlag(V) == 0){
 		_cyclesLeft++;
@@ -345,17 +344,7 @@ uint8_t CPU6502::ORA(){
 	return 0;
 }
 
-uint8_t CPU6502::SBC(){
-	FetchData();
-	uint16_t value = (uint16_t)_fetchedData ^ 0x00FF;
-	uint16_t temp =  (uint16_t)_regs.accum + value + (uint16_t)GetFlag(C);
-	SetFlag(C, temp > 255);
-	SetFlag(Z, (temp & 0x00FF) == 0x00);
-	SetFlag(N, temp & 0x80);
-	SetFlag(V, ((uint16_t)_regs.accum ^ temp) & (~((uint16_t)_regs.accum ^ (uint16_t)_fetchedData)));
-	_regs.accum = temp & 0x00FF;
-	return 1;
-}
+
 
 uint8_t CPU6502::PHA(){
 	WriteToBus(0x0100 + _regs.stkp, _regs.accum);
@@ -374,6 +363,148 @@ uint8_t CPU6502::PLA(){
 	_regs.accum = ReadFromBus(0x0100 + _regs.stkp);
 	SetFlag(Z, _regs.accum == 0x00);
 	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::ROL(){
+	FetchData();
+	uint16_t temp = (uint16_t)(_fetchedData << 1) | GetFlag(C);
+	SetFlag(C, temp & 0xFF00);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x0080);
+	
+	if (_instructTable[_currOPcode].Addrmode == &CPU6502::IMP)
+		_regs.accum = temp & 0x00FF;
+	else
+		WriteToBus(_addrAbs, temp & 0x00FF);
+   return 0;
+}
+
+uint8_t CPU6502::ROR(){
+	FetchData();
+	uint16_t temp = (uint16_t)(GetFlag(C) << 7) | (_fetchedData >> 1);
+	SetFlag(C, _fetchedData & 0x01);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x0080);
+	
+	if (_instructTable[_currOPcode].Addrmode == &CPU6502::IMP)
+		_regs.accum = temp & 0x00FF;
+	else
+		WriteToBus(_addrAbs, temp & 0x00FF);
+   return 0;
+}
+
+
+uint8_t CPU6502::RTI(){
+	_regs.stkp++;
+	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
+	_regs.status &= ~B;
+	_regs.status &= ~U;
+
+	_regs.stkp++;
+	_regs.pc = (uint16_t)ReadFromBus(0x0100 + _regs.stkp);
+   _regs.stkp++;
+   _regs.pc |= (uint16_t)ReadFromBus(0x0100 + _regs.stkp) << 8;
+   return 0;
+	
+}
+
+uint8_t CPU6502::RTS(){
+	_regs.stkp++;
+	_regs.pc = (uint16_t)ReadFromBus(0x0100 + _regs.stkp);
+	_regs.stkp++;
+	_regs.pc |= (uint16_t)ReadFromBus(0x0100 + _regs.stkp) << 8;
+	_regs.pc++;
+	return 0;
+	
+}
+
+
+
+uint8_t CPU6502::SBC(){
+	FetchData();
+	uint16_t value = (uint16_t)_fetchedData ^ 0x00FF;
+	uint16_t temp =  (uint16_t)_regs.accum + value + (uint16_t)GetFlag(C);
+	SetFlag(C, temp > 255);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	SetFlag(V, ((uint16_t)_regs.accum ^ temp) & (~((uint16_t)_regs.accum ^ (uint16_t)_fetchedData)));
+	_regs.accum = temp & 0x00FF;
+	return 1;
+}
+
+uint8_t CPU6502::SEC(){
+	SetFlag(C, true);
+	return 0;
+}
+
+uint8_t CPU6502::SED(){
+	SetFlag(D, true);
+	return 0;
+}
+
+uint8_t CPU6502::SEI(){
+	SetFlag(I, true);
+	return 0;
+}
+
+uint8_t CPU6502::STA(){
+	WriteToBus(_addrAbs, _regs.accum);
+	return 0;
+}
+
+uint8_t CPU6502::STX(){
+	WriteToBus(_addrAbs, _regs.x);
+	return 0;
+}
+
+uint8_t CPU6502::STY(){
+	WriteToBus(_addrAbs, _regs.y);
+	return 0;
+}
+
+uint8_t CPU6502::TAX(){
+	_regs.x = _regs.accum;
+	SetFlag(Z, _regs.x == 0x00);
+	SetFlag(N, _regs.x & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::TAY(){
+	_regs.y = _regs.accum;
+	SetFlag(Z, _regs.y == 0x00);
+	SetFlag(N, _regs.y & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::TSX(){
+	_regs.x = _regs.stkp;
+	SetFlag(Z, _regs.x == 0x00);
+	SetFlag(N, _regs.x & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::TXA(){
+	_regs.accum = _regs.x;
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::TXS(){
+	_regs.stkp = _regs.x;
+	return 0;
+}
+
+uint8_t CPU6502::TYA(){
+	_regs.accum = _regs.y;
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::XXX(){
+	
 	return 0;
 }
 
@@ -445,16 +576,3 @@ void CPU6502::NonMaskInt(){
 	_cyclesLeft = 7;
 }
 
-uint8_t CPU6502::RTI(){
-	_regs.stkp++;
-	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
-	_regs.status &= ~B;
-	_regs.status &= ~U;
-
-	_regs.stkp++;
-	_regs.pc = (uint16_t)ReadFromBus(0x0100 + _regs.stkp);
-   _regs.stkp++;
-   _regs.pc |= (uint16_t)ReadFromBus(0x0100 + _regs.stkp) << 8;
-   return 0;
-	
-}
