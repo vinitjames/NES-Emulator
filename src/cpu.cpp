@@ -335,6 +335,152 @@ uint8_t CPU6502::CLV(){
 	return 0;
 }
 
+uint8_t CPU6502::CMP(){
+	FetchData();
+	uint8_t temp = _regs.accum - _fetchedData;
+	SetFlag(C, _regs.accum >= _fetchedData);
+	SetFlag(Z, temp == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::CPX(){
+	FetchData();
+	uint8_t temp = _regs.x - _fetchedData;
+	SetFlag(C, _regs.x >= _fetchedData);
+	SetFlag(Z, temp == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::CPY(){
+	FetchData();
+	uint8_t temp = _regs.y - _fetchedData;
+	SetFlag(C, _regs.y >= _fetchedData);
+	SetFlag(Z, temp == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::DEC(){
+	FetchData();
+	uint8_t temp = _fetchedData - 1;
+	WriteToBus(_addrAbs, temp);
+	SetFlag(Z, temp == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::DEX(){
+	_regs.x -= 1;
+	SetFlag(Z, _regs.x == 0x00);
+	SetFlag(N, _regs.x & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::DEY(){
+	_regs.y -= 1;
+	SetFlag(Z, _regs.y == 0x00);
+	SetFlag(N, _regs.y & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::EOR(){
+	FetchData();
+	_regs.accum ^= _fetchedData;
+	SetFlag(Z, _regs.accum  == 0x00);
+	SetFlag(N, _regs.accum  & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::INC(){
+	FetchData();
+	uint8_t temp = _fetchedData + 1;
+	WriteToBus(_addrAbs, temp);
+	SetFlag(Z, temp == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::INX(){
+	_regs.x++;
+	SetFlag(Z, _regs.x == 0x00);
+	SetFlag(N, _regs.x & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::INY(){
+	_regs.y++;
+	SetFlag(Z, _regs.y == 0x00);
+	SetFlag(N, _regs.y & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::JMP(){
+	_regs.pc = _addrAbs;
+	return 0;
+}
+
+uint8_t CPU6502::JSR(){
+	_regs.pc--;
+	WriteToBus(0x0100 +_regs.stkp, (_regs.pc >> 8) & 0x00FF);
+	_regs.stkp--;
+	WriteToBus(0x0100 +_regs.stkp, _regs.pc & 0x00FF);
+	_regs.stkp--;
+	_regs.pc = _addrAbs;
+	return 0;
+}
+
+uint8_t CPU6502::LDA(){
+	FetchData();
+	_regs.accum = _fetchedData;
+	SetFlag(Z, _regs.accum == 0x00);
+	SetFlag(N, _regs.accum & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::LDX(){
+	FetchData();
+	_regs.x = _fetchedData;
+	SetFlag(Z, _regs.x == 0x00);
+	SetFlag(N, _regs.x & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::LDY(){
+	FetchData();
+	_regs.y = _fetchedData;
+	SetFlag(Z, _regs.y == 0x00);
+	SetFlag(N, _regs.y & 0x80);
+	return 1;
+}
+
+uint8_t CPU6502::LSR(){
+	FetchData();
+	SetFlag(C, _fetchedData & 0x01);
+	uint16_t temp = (uint16_t)(_fetchedData >> 1);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x0080);
+	if (_instructTable[_currOPcode].Addrmode == &CPU6502::IMP)
+		_regs.accum = temp & 0x00FF;
+	else
+		WriteToBus(_addrAbs, temp & 0x00FF);
+   return 0;
+}
+
+uint8_t CPU6502::NOP(){
+	switch (_currOPcode) {
+	case 0x1C:
+	case 0x3C:
+	case 0x5C:
+	case 0x7C:
+	case 0xDC:
+	case 0xFC:
+		return 1;
+		break;
+	}
+	return 0;
+}
 
 uint8_t CPU6502::ORA(){
 	FetchData();
@@ -344,8 +490,6 @@ uint8_t CPU6502::ORA(){
 	return 0;
 }
 
-
-
 uint8_t CPU6502::PHA(){
 	WriteToBus(0x0100 + _regs.stkp, _regs.accum);
 	_regs.stkp--;
@@ -353,7 +497,9 @@ uint8_t CPU6502::PHA(){
 }
 
 uint8_t CPU6502::PHP(){
-	WriteToBus(0x0100 + _regs.status, _regs.accum);
+	WriteToBus(0x0100 + _regs.stkp, _regs.status | B | U);
+	SetFlag(B, false);
+	SetFlag(U, false);
 	_regs.stkp--;
 	return 0;
 }
@@ -363,6 +509,13 @@ uint8_t CPU6502::PLA(){
 	_regs.accum = ReadFromBus(0x0100 + _regs.stkp);
 	SetFlag(Z, _regs.accum == 0x00);
 	SetFlag(N, _regs.accum & 0x80);
+	return 0;
+}
+
+uint8_t CPU6502::PLP(){
+	_regs.stkp++;
+	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
+	SetFlag(U, true);
 	return 0;
 }
 
@@ -394,7 +547,6 @@ uint8_t CPU6502::ROR(){
    return 0;
 }
 
-
 uint8_t CPU6502::RTI(){
 	_regs.stkp++;
 	_regs.status = ReadFromBus(0x0100 + _regs.stkp);
@@ -418,8 +570,6 @@ uint8_t CPU6502::RTS(){
 	return 0;
 	
 }
-
-
 
 uint8_t CPU6502::SBC(){
 	FetchData();
