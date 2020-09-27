@@ -83,12 +83,7 @@ private:
 	
 	std::vector<Instruction> _instructTable;
 
-	// functions for internal cpu functionalities
-	void ExecuteClockCycle();
-	void Reset();
-	void IntReq();
-	void NonMaskInt();
-	uint8_t FetchData();
+	
 
 	//helper variables for the internal functionality of the CPU 
 	uint8_t _fetchedData = 0x00;  
@@ -96,6 +91,14 @@ private:
 	uint16_t _addrRel = 0x0000;
 	uint8_t _currOPcode = 0x00;
 	uint8_t _cyclesLeft = 0;
+
+public:
+	// functions for internal cpu functionalities
+	void ExecuteClockCycle();
+	void Reset();
+	void IntReq();
+	void NonMaskInt();
+	uint8_t FetchData();
 	
 };
 
