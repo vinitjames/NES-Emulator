@@ -34,6 +34,8 @@ public:
 
 	void ConnectCartridge(std::shared_ptr<Cartridge>& cartridge);
 
+	void Clock();
+
 protected:
 private:
 	uint8_t _nameTable[2][1024];
